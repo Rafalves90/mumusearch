@@ -1,0 +1,85 @@
+# Guia de Deploy - MumuSearch
+
+1. ACESSE O SERVIDOR VIA SSH
+
+ssh root@SEU_IP
+
+2. INSTALAR DEPENDÊNCIAS
+
+apt update && apt install python3 python3-pip python3-venv nginx certbot python3-certbot-nginx -y
+
+3. CLONAR O REPOSITÓRIO
+
+cd /var/www/
+git clone https://github.com/Rafalves90/mumusearch.git
+cd mumusearch
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+4. CRIAR O BANCO DE DADOS INICIAL (opcional)
+
+python3
+>>> import sqlite3
+>>> conn = sqlite3.connect("app/database.db")
+>>> c = conn.cursor()
+>>> c.execute("CREATE TABLE IF NOT EXISTS pages (title TEXT, url TEXT, snippet TEXT, content TEXT)")
+>>> conn.commit()
+>>> conn.close()
+>>> exit()
+
+5. RODAR COM GUNICORN PARA TESTAR
+
+venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 wsgi:app
+
+6. CONFIGURAR NGINX
+
+nano /etc/nginx/sites-available/mumusearch
+
+# Cole isso no arquivo:
+server {
+    listen 80;
+    server_name mumusearch.com www.mumusearch.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# Ativar o site:
+ln -s /etc/nginx/sites-available/mumusearch /etc/nginx/sites-enabled/
+nginx -t && systemctl restart nginx
+
+7. INSTALAR HTTPS COM LET'S ENCRYPT
+
+certbot --nginx -d mumusearch.com -d www.mumusearch.com
+
+8. CRIAR SERVIÇO PARA MANTER O SITE NO AR
+
+nano /etc/systemd/system/mumusearch.service
+
+# Cole:
+[Unit]
+Description=MumuSearch Gunicorn
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/mumusearch
+ExecStart=/var/www/mumusearch/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 wsgi:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# Ativar o serviço:
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl start mumusearch
+systemctl enable mumusearch
+
+9. ACESSE SEU SITE
+
+https://mumusearch.com
