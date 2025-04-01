@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultados para "{{ query }}" - MumuSearch</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+    }
+    .result {
+      margin-bottom: 20px;
+    }
+    .result a {
+      font-size: 18px;
+      color: blue;
+      text-decoration: none;
+    }
+    .snippet {
+      color: #444;
+    }
+    footer {
+      margin-top: 60px;
+      color: #888;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Resultados para "{{ query }}"</h1>
+
+  {% if results %}
+    {% for title, url, snippet in results %}
+      <div class="result">
+        <a href="{{ url }}" target="_blank">{{ title }}</a><br>
+        <div class="snippet">{{ snippet }}</div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>Nenhum resultado encontrado.</p>
+  {% endif %}
+
+  <footer>
+    © 2025 MumuSearch · CNPJ: 59.051.174/0001-26 · Santesso Midia LTDA
+  </footer>
+</body>
+</html>
